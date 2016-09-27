@@ -139,26 +139,21 @@ class HTTPClient(object):
     def POST(self, url, args=None):
         code = 500
         body = ""
-        try:
-            
-            file = url.split('/',1)[1]
-        except:
-            file = "/"
         
-        if (args != None):
+        if args:
             encode = urllib.urlencode(args)
             send_all = "Content-type:application/x-www-form-urlencoded\r\n"
-            send_all += "Content-Length: %d\r\n\r\n" %(len(encode))
-            send_all += "%s\r\n" %(encode)
+            send_all += "Content-Length: " + str(len(encode)) + "\r\n\r\n" 
             send_all += "\r\n"
         else:
             send_all = "Content-type:application/x-www-form-urlencoded\r\n"
             send_all += "Content-Length: 0\r\n\r\n"
             send_all += "\r\n"
-            send_all += "\r\n"
         
         
         host, hostname, port, path = self.get_host_port(url)
+        print hostname
+        print host
         conn = self.connect(hostname, port)
         
         conn.sendall("POST " + path + " HTTP/1.1\r\n")
