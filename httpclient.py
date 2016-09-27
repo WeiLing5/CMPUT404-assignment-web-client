@@ -44,12 +44,11 @@ class HTTPClient(object):
 		host = url_part[2]
 	
 		if host.find(":") != -1:
-			hostname, port = host.split(":")
+			host, port = host.split(":")
 			port = int(port)
 		else:
-			hostname = host
-			port = 80
-		return host, hostname, port, path
+			host, port = host, 80
+		return host, port, path
 
 
 
@@ -99,12 +98,6 @@ class HTTPClient(object):
     def GET(self, url, args=None):
         code = 500
         body = ""
-        try:
-            file = url.split('/',1)[1]
-        except:
-            file = "/"
-        
-        
         
         if (args != None):
             encode = urllib.urlencode(args)
@@ -119,8 +112,8 @@ class HTTPClient(object):
             send_all += "\r\n"
         
         
-        host, hostname, port, path = self.get_host_port(url)
-        conn = self.connect(hostname, port)
+        host, port, path = self.get_host_port(url)
+        conn = self.connect(host, port)
         
         conn.sendall("GET " + path + " HTTP/1.1\r\n")
         conn.sendall("Host: " + host + "\r\n")
@@ -140,35 +133,35 @@ class HTTPClient(object):
         code = 500
         body = ""
         
-        if args:
+        if(args):
             encode = urllib.urlencode(args)
-            send_all = "Content-type:application/x-www-form-urlencoded\r\n"
-            send_all += "Content-Length: " + str(len(encode)) + "\r\n\r\n" 
-            send_all += "\r\n"
+            lens = len(encode)
         else:
-            send_all = "Content-type:application/x-www-form-urlencoded\r\n"
-            send_all += "Content-Length: 0\r\n\r\n"
-            send_all += "\r\n"
+            encode = None
+            lens = 0
         
+        host, port, path = self.get_host_port(url)
+        #print hostname
+        #print host
+        conn = self.connect(host, port)
+
+        header ="POST "+path+" HTTP/1.1\r\n"+ \
+				"Host: "+host+"\r\n" + \
+                "Content-Type: application/x-www-form-urlencoded\r\n"+ \
+                "Content-Length: "+ str(lens) +"\r\n\r\n"
+
+        conn.sendall(header)
+
+        if (lens!=0):
+            conn.sendall(encode+"\r\n\r\n")
         
-        host, hostname, port, path = self.get_host_port(url)
-        print hostname
-        print host
-        conn = self.connect(hostname, port)
-        
-        conn.sendall("POST " + path + " HTTP/1.1\r\n")
-        conn.sendall("Host: " + host + "\r\n")
-        conn.sendall("Connection: close\r\n\r\n")
-        conn.sendall("Accept: */*\r\n")
-        conn.sendall(send_all)
-        
+                
         retutn_val = self.recvall(conn)
         code = self.get_code(retutn_val)
         body = self.get_body(retutn_val)
         print body
         
         conn.close()
-
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
